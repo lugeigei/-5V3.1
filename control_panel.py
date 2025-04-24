@@ -111,10 +111,10 @@ class ControlPanel:
         except Exception as e:
             logging.error(f"xitongyun xingyichang: {str(e)}")
     
-    def on_close(self):
-        self.is_running = False
-        self.shutdown_system()
-        self.master.destroy()
+#     def on_close(self):
+#         self.is_running = False
+#         self.shutdown_system()
+#         self.master.destroy()
     
     def shutdown_system(self):
         try:
@@ -142,7 +142,7 @@ class ControlPanel:
                 img = Image.fromarray(default_img)
                 imgtk = ImageTk.PhotoImage(image=img)
                 
-                if self.system.running and hasattr(self.system, 'frame_buffer'):
+                if self.is_running and self.system.running and hasattr(self.system, 'frame_buffer'):
                     if len(self.system.frame_buffer) > 0:
                         frame = self.system.frame_buffer[-1]
                         #img = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
@@ -151,9 +151,11 @@ class ControlPanel:
                         resized_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2RGB)
                         img = Image.fromarray(resized_frame)
                         imgtk = ImageTk.PhotoImage(image=img)
-                self.preview_label.config(image=imgtk)
-                setattr(self.preview_label, 'image', imgtk)
-                self.master.update_idletasks()
+                    if self.master.winfo_exists():
+                        self.preview_label.config(image=imgtk)
+                        setattr(self.preview_label, 'image', imgtk)
+                        self.master.update_idletasks()
+                time.sleep(0.1)
         except Exception as e:
             logging.error(f"liulan chuangkou yichang: {str(e)}")
             
@@ -231,7 +233,7 @@ class ControlPanel:
         try:
             while self.is_running and self.register_running:
                 frame = hardware.capture_frame()
-                if frame is not None:
+                if frame is not None and self.is_running:
                     display_frame = frame.copy()
                     faces = detector.detect_faces(display_frame, return_coords=True)
                     if faces:
@@ -317,6 +319,11 @@ class ControlPanel:
         self.log_text.see(tk.END)
         self.log_text.config(state=tk.DISABLED)
         self.event_label.config(text=f"zuixin shijian: {event}")
+        
+    def on_close(self):
+        self.is_running = False
+        self.shutdown_system()
+        self.master.destroy()  
         
 if __name__ == "__main__":
     root = tk.Tk()
